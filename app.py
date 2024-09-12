@@ -1,69 +1,78 @@
-from flask import Flask , render_template,request,jsonify
+from flask import Flask, request
+from flask_cors import CORS, cross_origin
 import pickle
-import numpy 
-import warnings
-warnings.filterwarnings('ignore')
+import pandas as pd
+import numpy as np
 
-# import sklearn
-# import pymongo    # for deal with the mongodb database
-# client = pymongo.MongoClient("mongodb+srv://Ranjit_singh:<password>@learning.a5xc4jg.mongodb.net/?retryWrites=true&w=majority")
-# mydb=client['Bikeproject']  # create the database for the project
-# colle=mydb['bike_data']      # collection create
+app = Flask(__name__)
+CORS(app)
 
-model=pickle.load(open('bike_price_prediction.pkl','rb'))
+
+bike=pickle.load(open('linear_regression_model.pkl','rb'))
 app=Flask(__name__)
-@app.route('/',methods=['GET','POST'])
-def Home():
-    return render_template('index.html')
-@app.route('/predict', methods=['GET','POST'])
+
+@app.route('/predictB', methods=['POST'])
+@cross_origin()
 def predict():
-    if request.method=='POST':
-        kms_driven=request.form['Kms_Driven']   # gathering the document
-        owner=request.form['owner']
-        age=int(request.form['age'])
-        power=int(request.form['power'])
-        brand=request.form['brand_name']
-        # record={'bike':brand,'kilometeres':kms_driven,'handed':owner,'year':age,'power':power}        # create the json document for database
-        if (brand=='Royal Enfield'):  # feature scaling string into integer
-            brand=1
+    
+        data = request.get_json()
+        app.logger.info(data)
+        kms_driven=int(data.get('Driven'))   
+        owner=int(data.get('Owner'))
+        age=int(data.get('Age'))
+        power=int(data.get('Power'))
+        brand=data.get('Brand_name')
+        Brand = 0   
+        
+        if (brand=='Royal Enfield'):  
+            Brand=1
         elif(brand=='KTM'):
-            brand=2
+            Brand=2
         elif(brand=='Bajaj'):
-            brand=3
+            Brand=3
         elif(brand=='Harley'):
-            brand=4
+            Brand=4
         elif(brand=='Yamaha'):
-            brand=5
+            Brand=5
         elif(brand=='Honda'):
-            brand=6
+            Brand=6
         elif(brand=='Suzuki'):
-            brand=7
+            Brand=7
         elif(brand=='TVS'):
-            brand=8
+            Brand=8
         elif(brand=='Kawasaki'):
-            brand=9
+            Brand=9
         elif(brand=='Hyosung'):
-            brand=10
+            Brand=10
         elif(brand=='Benelli'):
-            brand=11
+            Brand=11
         elif(brand=='Mahindra'):
-            brand=12
+            Brand=12
         elif(brand=='Triumph'):
-            brand=13
+            Brand=13
         elif(brand=='Ducati'):
-            brand=14
+            Brand=14
         elif(brand=='BMW'):
-            brand=15
-        prediction=model.predict([[kms_driven,owner,age,power,brand]])  # pass value in the model
-        output=str(prediction[0])    # change dtype int into string of prediction
-        output2=str(output)
-        # record['Price']=prediction[0].round(2)       # adding the price into mongodb database
-        # colle.insert_one(record)
-    return render_template('index.html',prediction_text=f' {output2}')    # return the value on the webpage
+            Brand=15
+
+        new_data = {
+    'kms_driven': [kms_driven],
+    'owner': [owner],
+    'age': [age],
+    'power': [power],
+    'brand': [Brand]
+}
+        app.logger.info(new_data)
+
+        new_data_df = pd.DataFrame(new_data)
+        predictions = bike.predict(new_data_df)
+        print(predictions[0])
+
+        return str(np.round(predictions[0], 2))
+
 if __name__ == "__main__":
     app.run(debug=True)
 
 
 
-        #  -----Backend code by using Flask----- 
-
+        
